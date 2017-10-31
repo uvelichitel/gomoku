@@ -1,0 +1,17 @@
+{{ define "game" }}
+<!DOCTYPE html>
+<html>
+	<meta http-equiv="content-type"
+        content="application/xhtml+xml; charset=utf-8"/>
+	<head>
+		<title>Game</title>
+		{{template "entrystyle"}}
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.4.0/svg.min.js"></script>
+	</head>
+	<body>
+		<div id="buttons"></div>
+		<div id="drawing"></div>
+		{{template "mainjs" . }}
+	</body>
+</html> 
+{{ end }}

@@ -1,0 +1,52 @@
+Disputched
+{
+	control: "reg"
+	players:	[
+		{
+			nic: string
+		}
+		...
+		]
+	curr:	int,
+	mymark:	int
+}
+
+
+Start
+{
+	control: "start"
+	platers: [
+		{
+			nic: string
+			mark: int
+		}
+	...
+	]
+
+}
+
+Finish
+{
+		control: "done".
+		nic: string,
+		mark int,
+		begin: {
+			abs: int,
+			ord: int
+		},
+		end: {
+			abs: int,
+			ord: int
+		}
+	}
+}
+Turn
+{
+	nic: string,   // ready nic "go" mark 555
+	mark int,
+	point: {
+		abs: int,
+		ord: int
+	}
+}
+

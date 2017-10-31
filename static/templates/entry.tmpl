@@ -1,0 +1,49 @@
+{{ define "entry" }}
+<!DOCTYPE html>
+<html>
+	<meta http-equiv="content-type"
+        content="application/xhtml+xml; charset=utf-8"/>
+	<head>
+		<title>Present</title>
+		{{template "entrystyle"}}
+	</head>
+	<body>
+		<form action="/draw">
+			<select name="nplayers">
+				<option value=2>Два игрока</option>
+				<option value=3>Три игрока</option>
+				<option value=4>Четыре игрока</option>
+				<option value=5>Пять игроков</option>
+			</select>
+			<input list="nic" required=true name="nic" placeholder="Погремуха">
+			<datalist id="players">
+				{{range $key, $val := .Leaders }}<option value={{$val.Nic}}>{{end}}
+			</datalist>
+			<input type="submit" value="Поехали">
+		</form>
+		<table id="ScoreTable">
+			<caption>Отличники</caption>
+			<tr>
+			<th>Имя</th>
+			<th>Побед</th>
+			</tr>
+			{{range $key, $val := .Leaders }}<tr>
+			<td>{{$val.Nic}}</td>
+			<td>{{$val.Mark}}</td>
+			</tr>{{end}}
+		</table>
+		<table id="ActiveTable">
+			<caption>На поле</caption>
+			<tr>
+			<th>Игрок</th>
+			<th>Состав</th>
+			</tr>
+			{{range $key, $val := .Active }}<tr>
+			<td>{{$key}}</td>
+			<td>{{$val}}</td>
+			</tr>{{end}}
+		</table>
+	</body>
+</html> 
+
+{{ end }}

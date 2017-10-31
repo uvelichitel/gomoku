@@ -1,0 +1,223 @@
+{{ define "mainjs" }}
+<script type="text/javascript">
+		var colors = ['blue', 'orange', 'green', 'magenta', 'purple', 'aquamarine', 'yellow'];
+		var order = 30;
+		var port = 960;
+		var step = port/order;
+		var finished = true;
+		var  turn = 0;
+		var myMark = 0;
+		var myNic = '{{.Nic}}';
+		var nPlayers = {{.NPlayers}};
+		var turnTime = 30000;
+		var turnTimeout = null;
+		var timeout = null;
+		var interval = null;
+		var resolution = 10;
+		var players = [];
+		var points = [];
+		var vline = null;
+		var buttons = SVG('buttons').size(port, '2em');
+		var markers = buttons.group();
+		var contour = buttons.group();
+		var btn = contour.rect(port/nPlayers, '2em').radius(7).stroke({ width: 4, color: 'red', opacity: 1}).fill({opacity: 0});
+		var slider = contour.rect(0, '2em').radius(7).fill({color: 'red'});
+		contour.move(2*port);
+		var ready = buttons.group();
+		var readybut = ready.rect(port, '2em').radius(7).stroke({ width: 4, color: 'green'}).fill({color: 'green', opacity: 0.01});
+		ready.text('{{ .Nic }} жги').fill('red').font({anchor: 'middle'}).move(port/2);
+		var draw = SVG('drawing').size(port, port);
+		var ramk = draw.rect(port, port).fill({ opacity: 0}).stroke({ width: 7, color: 'green'});       //stroke({ width: 7, color: 'green'}).fill({ opacity: 0});
+		var sharp = draw.group();
+		for (y = 0; y < port; y = y+step) { 
+			sharp.line(0, 0, port-step, 0).stroke({ width: 1 }).move(0, y);
+		};
+		for (x = 0; x < port; x =x+step) { 
+			sharp.line(0, 0, 0, port-step).stroke({ width: 1 }).move(x, 0);
+		};
+		sharp.move(step/2, step/2);
+		var target = draw.group();
+		target.circle(step).stroke({ width: 2, color: 'green'}).fill({ opacity: 0});
+		target.line(-2*port, step/2, 2*port, step/2).stroke({ width: 3, color: 'green'});
+		target.line(step/2, -2*port, step/2, 2*port).stroke({ width: 3, color: 'green'});
+		target.move(2*port, 2*port);
+		var nolik = draw.symbol();
+		nolik.circle(step).stroke({ width: 2 }).fill({ opacity: 1 }).scale(0.9, 0.9)  //.move(step/4, step/4);
+		var last = draw.group();
+		last.line(0, 0, step, step).stroke({ width: 5, color: 'red'});
+		last.line(step, 0, 0, step).stroke({ width: 5, color: 'red'});
+		last.circle(step).fill({ opacity: 0 }).stroke({ width: 5, color: 'red'});
+		last.move(2*port);
+		function cleanUp(){
+			points.forEach(function (e, i, a){e.remove()});
+			if (vline != null){
+				vline.remove();
+			};
+			target.move(2*port, 2*port);
+			readybut.attr({'fill-cilor': 'green'});
+			ready.move(2*port);
+			contour.move(2*port);
+			last.move(2*port);
+		};
+		function showPlayers(p){
+			markers.remove();
+			markers = buttons.group();
+			if (Array.isArray(p)){
+				nPlayers = p.length;
+				
+				btn.attr('width', port/nPlayers);
+				contour.move(port*turn/nPlayers);
+				for (i=0; i<p.length; i++){
+					var cp = p[i];
+					var mrk = markers.group();
+					mrk.rect(port/p.length, '2em').radius(7).stroke({ width: 2 }).fill({ color: colors[i], opacity: 0.5});
+					mrk.move(port*i/p.length);
+					mrk.text(p[i]).font({anchor: 'middle'}).move(port/(p.length*2));
+				};
+			};	
+		};
+		function showVin(b, e){
+			if(('abs' in b)&&('ord' in b)&&('abs' in e)&&('ord' in e)){
+				vline = draw.line(step/2+b.abs*step, step/2+b.ord*step, step/2+e.abs*step, step/2+e.ord*step).stroke({ width: 7, color: 'red'});
+			}
+		};
+		function showTurn(mark, p){
+			target.move(2*port, 2*port);
+			if (('abs' in p)&&('ord' in p)){
+				points.push(draw.use(nolik).move(p.abs*step, p.ord*step).fill(colors[mark]));
+				last.move(p.abs*step, p.ord*step);
+			};		
+		};
+		function showTimer(){
+			clearCurrentInterval()
+			clearTimeout(timeout)
+			contour.move(port*turn/nPlayers);
+			timeout = setTimeout(clearCurrentInterval, turnTime);
+			var curr = 0;
+			function showTime(){
+				slider.attr('width', (curr+1)*port/(resolution*nPlayers));
+				curr++;
+			};
+			interval = setInterval(showTime, turnTime/resolution-1);
+		};
+		function showReady(){         // todo
+			markers.remove();
+			contour.move(2*port);
+			ready.move(0);
+		};
+		function clearCurrentInterval(){
+			slider.attr('width', 0);  // todo remove
+			clearInterval(interval);
+		};
+window.addEventListener("load", go);
+function go(){
+	//var ws = new WebSocket('ws://localhost:8080/ws?nic={{.Nic}}&nplayers={{.NPlayers}}');
+	var ws = new WebSocket('ws://kostar.org:80/ws?nic={{.Nic}}&nplayers={{.NPlayers}}');
+	window.addEventListener("beforeunload", function (event) {
+  		ws.Close();
+	});
+	ws.onopen = function(e){
+		ws.onclose = function(event) {
+			alert('Server say GoodBuy');
+		};
+		ws.onmessage = function(event) {
+			var res = JSON.parse(event.data);
+			if('control' in res){
+				switch (res.control){
+					case 'reg':
+						if (('players' in res)&&('curr' in res)&&('mymark' in res)){
+							myMark = res.mymark;
+							turn = res.curr;
+							if (myMark == turn){
+								ramk.attr({'stroke-opacity': 1});
+							}else{
+								ramk.attr({'stroke-opacity': 0});
+							};
+							ready.move(2*port);
+							showPlayers(res.players);
+						};
+						break;
+					case 'start':
+						cleanUp();
+						finished = false;
+						showTimer();
+						break;
+					case 'done':
+						finished = true;
+						if (('begin' in res)&&('end' in res)&&('nic' in res)){
+							showVin(res.begin, res.end);
+							if (myNic == res.nic){
+								alert('Поздравляем '+res.nic+'. Так держать');
+							}else{
+								alert("Выиграл "+res.nic);
+							};
+						};
+						clearCurrentInterval();
+						clearTimeout(timeout);
+						markers.remove();
+						contour.move(2*port);
+						ready.move(0);
+						break;
+				};
+			}else if(('nic' in res)&&('mark' in res)&&('point' in res)){
+				clearTimeout(timeout);
+				showTurn(res.mark, res.point);
+				turn = res.mark+1;
+				if (turn >= nPlayers){turn = 0};
+				if (myMark == turn){
+					ramk.attr({'stroke-opacity': 1});
+				}else{
+					ramk.attr({'stroke-opacity': 0});
+				};
+				showTimer();
+			};
+		};		
+		draw.click(function(e) {
+			if ((turn == myMark)&&(!finished)){
+				var pointer = draw.point(e.clientX, e.clientY);
+				var abs = Math.floor(pointer.x*order/port);
+				var ord = Math.floor(pointer.y*order/port);
+				var msg = {
+					nic: myNic,
+					mark: myMark,
+					point: {	
+						abs: abs,
+						ord: ord
+					}
+				};
+				ws.send(JSON.stringify(msg));
+			};
+		});
+		draw.mousemove(function(e) {
+			if ((turn == myMark)&&(!finished)){
+					var pointer = draw.point(e.clientX, e.clientY);
+					var abs = Math.floor(pointer.x*order/port);
+					var ord = Math.floor(pointer.y*order/port);
+					if (ord >= 0) {target.move(abs*step, ord*step)};
+			};
+		});
+		readybut.click(function(e) {
+			if (finished){
+				var msg = {
+					nic: 'go',
+					mark: 777,
+				};
+				ws.send(JSON.stringify(msg));
+			};
+		});
+		ready.mouseover(function(e) {
+			if (finished){
+				readybut.attr({'fill-opacity': 0.5});
+				document.getElementById("buttons").style.cursor = 'pointer';
+			};
+		});
+		ready.mouseout(function(e) {
+			if (finished){
+				readybut.attr({'fill-opacity': 0});
+				document.getElementById("buttons").style.cursor = 'pointer';
+			};
+		});
+	};
+};
+</script>
+{{ end }}
