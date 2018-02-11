@@ -111,8 +111,8 @@
 		};
 window.addEventListener("load", go);
 function go(){
-	//var ws = new WebSocket('ws://localhost:8080/ws?nic={{.Nic}}&nplayers={{.NPlayers}}');
-	var ws = new WebSocket('ws://kostar.org:80/ws?nic={{.Nic}}&nplayers={{.NPlayers}}');
+	var ws = new WebSocket('ws://{{.Address}}/ws?nic={{.Nic}}&nplayers={{.NPlayers}}');
+	//var ws = new WebSocket('ws://kostar.org:80/ws?nic={{.Nic}}&nplayers={{.NPlayers}}');
 	window.addEventListener("beforeunload", function (event) {
   		ws.Close();
 	});

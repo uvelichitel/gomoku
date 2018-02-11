@@ -12,6 +12,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var address = "localhost:8080"
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -629,7 +631,8 @@ func Draw(w http.ResponseWriter, r *http.Request) {
 	var g = struct {
 		Nic      string
 		NPlayers string
-	}{r.Form.Get("nic"), r.Form.Get("nplayers")}
+		Address	string
+	}{r.Form.Get("nic"), r.Form.Get("nplayers"), address}
 	err = templates.ExecuteTemplate(w, "game", g)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -682,5 +685,5 @@ func main() {
 	http.HandleFunc("/", Entry)
 	http.HandleFunc("/draw", Draw)
 	http.HandleFunc("/ws", HandlePlayer)
-	logger.Fatal(http.ListenAndServe(":8080", nil))
+	logger.Fatal(http.ListenAndServe(address, nil))
 }
